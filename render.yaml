@@ -16,14 +16,3 @@ services:
         fromDatabase:
           name: veda-db
           property: connectionString
-
-  # 2. Frontend (React + Vite)
-  - type: web
-    name: veda-frontend
-    env: static
-    buildCommand: npm install && npm run build
-    staticPublishPath: veda_frontend/dist
-    envVars:
-      - key: VITE_API_BASE_URL
-        # Ganti URL ini di Dashboard Render jika nama backend Anda berbeda
-        value: https://veda-backend.onrender.com/api
