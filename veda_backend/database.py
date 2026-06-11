@@ -4,34 +4,32 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.orm import declarative_base
 
 # 1. Connection address to your database
-# Use environment variable DATABASE_URL for production (Render/PostgreSQL)
-# Fallback to local MySQL for development
+# Use environment variable DATABASE_URL for production (Aiven MySQL)
 SQLALCHEMY_DATABASE_URL = os.getenv("DATABASE_URL")
 
 if SQLALCHEMY_DATABASE_URL:
-    # Render provides 'postgres://', but SQLAlchemy requires 'postgresql://'
-    if SQLALCHEMY_DATABASE_URL.startswith("postgres://"):
-        SQLALCHEMY_DATABASE_URL = SQLALCHEMY_DATABASE_URL.replace("postgres://", "postgresql://", 1)
+    # Aiven MySQL URL usually starts with mysql://
+    # SQLAlchemy requires mysql+pymysql://
+    if SQLALCHEMY_DATABASE_URL.startswith("mysql://"):
+        SQLALCHEMY_DATABASE_URL = SQLALCHEMY_DATABASE_URL.replace("mysql://", "mysql+pymysql://", 1)
     
-    # Engine for PostgreSQL
-    engine = create_engine(SQLALCHEMY_DATABASE_URL)
+    # Engine for Aiven MySQL with SSL requirements
+    engine = create_engine(
+        SQLALCHEMY_DATABASE_URL,
+        connect_args={"ssl": {"ca": "/etc/ssl/certs/ca-certificates.crt"}} if os.name != 'nt' else {}
+    )
 else:
     # Fallback to local MySQL
-    # Format: mysql+pymysql://user:password@host:port/dbname
     SQLALCHEMY_DATABASE_URL = "mysql+pymysql://root:@localhost:3306/veda"
     engine = create_engine(
         SQLALCHEMY_DATABASE_URL, 
-        pool_pre_ping=True,    # Check connection before use
-        pool_recycle=3600      # Automatically reset connection every 1 hour
+        pool_pre_ping=True,
+        pool_recycle=3600
     )
 
-# 3. Create SessionMaker
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-
-# 4. Base class used by models.py as a table template
 Base = declarative_base()
 
-# 5. Dependency function to get database session for API requests
 def get_db():
     db = SessionLocal()
     try:

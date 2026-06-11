@@ -7,4 +7,14 @@ services:
     startCommand: gunicorn -w 4 -k uvicorn.workers.UvicornWorker veda_backend.main:app --bind 0.0.0.0:$PORT
     envVars:
       - key: DATABASE_URL
-        sync: false # Anda akan memasukkan URL dari Neon secara manual saat deploy
+        sync: false # Anda akan memasukkan Service URL dari Aiven MySQL secara manual
+
+  # 2. Frontend (React + Vite)
+  - type: web
+    name: veda-frontend
+    env: static
+    buildCommand: npm install && npm run build
+    staticPublishPath: veda_frontend/dist
+    envVars:
+      - key: VITE_API_BASE_URL
+        value: https://veda-backend.onrender.com/api
